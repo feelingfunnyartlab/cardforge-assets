@@ -590,6 +590,27 @@
       z-index: 1;
     }
 
+    /* ── Back card mode (side=back) ──────────────────────────── */
+    /* Mirrors the designer's card-back-art-area: artwork fills inset:10px,
+       no template inner layout (header/stats/text hidden). */
+    #card-back-fill {
+      position: absolute;
+      inset: 10px;
+      overflow: hidden;
+      border-radius: 8px;
+      z-index: 1;
+      display: none;
+    }
+    #card-back-fill img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transform-origin: center;
+    }
+    .card-render.back-mode .card-inner,
+    .card-render.back-mode .card-rarity,
+    .card-render.back-mode .card-full-art-bg { display: none !important; }
+
     /* ── Full art mode ──────────────────────────────────────── */
     .card-full-art-bg {
       position: absolute; inset: 0; z-index: 0;
@@ -800,6 +821,8 @@
     <div class="art-fx-d"></div>
     <!-- Full art background image -->
     <img class="card-full-art-bg" id="card-full-art-bg" alt="">
+    <!-- Back card fill (side=back) — mirrors designer card-back-art-area -->
+    <div id="card-back-fill"><img id="card-back-fill-img" alt=""></div>
     <!-- Rarity indicators -->
     <div class="card-rarity" id="card-rarity"></div>
     <!-- Card body -->
@@ -1240,24 +1263,53 @@
         var artUrl = (data.artwork || data.artworkFront || '').trim();
         artUrl = artUrl.replace(/^"|"$/g, '');
         if (artUrl.indexOf('//') === 0) artUrl = 'https:' + artUrl;
+
+        /* side param: 'back' uses back-card layout, 'front' (default) uses template layout */
+        var _side = params.get('side') || 'front';
+
+        /* Scale factor: artX/artY were set in the card-designer at 300×420px.
+           card-preview renders at 250×350px. Artwork area widths scale ~proportionally
+           (300→250 = ×5/6), so pan values need the same correction. artZoom is
+           dimensionless and does NOT need scaling. */
+        var _PAN_SCALE = 5 / 6; /* 250 / 300 */
+
+        var _useZ = (_side === 'back') ? artZoomBack : artZoom;
+        var _useX = ((_side === 'back') ? artXBack : artX) * _PAN_SCALE;
+        var _useY = ((_side === 'back') ? artYBack : artY) * _PAN_SCALE;
+        var _tfm  = (_useZ !== 1 || _useX !== 0 || _useY !== 0)
+                    ? 'scale(' + _useZ + ') translate(' + (_useX / _useZ) + 'px,' + (_useY / _useZ) + 'px)'
+                    : '';
+
         if (artUrl) {
-          var artImg = document.getElementById('card-artwork-img');
-          artImg.src = artUrl;
-          artImg.style.display = 'block';
-          document.getElementById('card-art-ph').style.display = 'none';
-          /* Apply zoom / pan from card_state */
-          var _side   = params.get('side') || 'front';
-          var _useZ   = (_side === 'back') ? artZoomBack : artZoom;
-          var _useX   = (_side === 'back') ? artXBack    : artX;
-          var _useY   = (_side === 'back') ? artYBack    : artY;
-          if (_useZ !== 1 || _useX !== 0 || _useY !== 0) {
-            artImg.style.transformOrigin = 'center';
-            artImg.style.transform = 'scale(' + _useZ + ') translate(' + (_useX / _useZ) + 'px,' + (_useY / _useZ) + 'px)';
-          }
-          if (fullArt) {
-            var fullBg = document.getElementById('card-full-art-bg');
-            fullBg.src = artUrl;
-            card.classList.add('full-art');
+          if (_side === 'back') {
+            /* ── Back card mode ──────────────────────────────────────
+               Mirrors the designer's VERSO: artwork fills inset:10px area,
+               template frame (border/shadow/bg) still shows, layout hidden. */
+            card.classList.add('back-mode');
+            var backFill    = document.getElementById('card-back-fill');
+            var backFillImg = document.getElementById('card-back-fill-img');
+            backFill.style.display = '';
+            backFillImg.src = artUrl;
+            if (_tfm) {
+              backFillImg.style.transformOrigin = 'center';
+              backFillImg.style.transform = _tfm;
+            }
+          } else {
+            /* ── Front card mode ─────────────────────────────────────
+               Artwork in the template's artwork area, with zoom / pan. */
+            var artImg = document.getElementById('card-artwork-img');
+            artImg.src = artUrl;
+            artImg.style.display = 'block';
+            document.getElementById('card-art-ph').style.display = 'none';
+            if (_tfm) {
+              artImg.style.transformOrigin = 'center';
+              artImg.style.transform = _tfm;
+            }
+            if (fullArt) {
+              var fullBg = document.getElementById('card-full-art-bg');
+              fullBg.src = artUrl;
+              card.classList.add('full-art');
+            }
           }
         }
 
