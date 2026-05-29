@@ -1182,6 +1182,8 @@
         var artStateForTpl = null;
         var fontScales     = null;
         var fullArt        = false;
+        var artZoom = 1, artX = 0, artY = 0;
+        var artZoomBack = 1, artXBack = 0, artYBack = 0;
         var stateStr = (data.card_state || '').trim();
         if (stateStr) {
           try {
@@ -1190,6 +1192,8 @@
             if (decoded.artState && decoded.artState[tpl]) artStateForTpl = decoded.artState[tpl];
             if (decoded.fontScales) fontScales = decoded.fontScales;
             if (decoded.fullArt)    fullArt    = true;
+            if (decoded.artZoom !== undefined)     { artZoom     = +decoded.artZoom     || 1; artX     = +decoded.artX     || 0; artY     = +decoded.artY     || 0; }
+            if (decoded.artZoomBack !== undefined) { artZoomBack = +decoded.artZoomBack || 1; artXBack = +decoded.artXBack || 0; artYBack = +decoded.artYBack || 0; }
           } catch (e) { /* silent — use defaults */ }
         }
 
@@ -1241,6 +1245,15 @@
           artImg.src = artUrl;
           artImg.style.display = 'block';
           document.getElementById('card-art-ph').style.display = 'none';
+          /* Apply zoom / pan from card_state */
+          var _side   = params.get('side') || 'front';
+          var _useZ   = (_side === 'back') ? artZoomBack : artZoom;
+          var _useX   = (_side === 'back') ? artXBack    : artX;
+          var _useY   = (_side === 'back') ? artYBack    : artY;
+          if (_useZ !== 1 || _useX !== 0 || _useY !== 0) {
+            artImg.style.transformOrigin = 'center';
+            artImg.style.transform = 'scale(' + _useZ + ') translate(' + (_useX / _useZ) + 'px,' + (_useY / _useZ) + 'px)';
+          }
           if (fullArt) {
             var fullBg = document.getElementById('card-full-art-bg');
             fullBg.src = artUrl;
