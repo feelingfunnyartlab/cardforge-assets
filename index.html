@@ -18,11 +18,11 @@
     }
 
     /* ═══════════════════════════════════════════════════════════
-       THE CARD  —  native 300×420, scaled via transform
+       THE CARD  —  native 250×350, scaled via transform
     ═══════════════════════════════════════════════════════════ */
     .card-render {
-      width: 300px;
-      height: 420px;
+      width: 250px;
+      height: 350px;
       position: relative;
       flex-shrink: 0;
       font-size: 14px;
@@ -771,7 +771,7 @@
     .card-render.feat-dark-matter .art-fx-d{background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0.22) 0%,transparent 26%),radial-gradient(circle at 50% 50%,transparent 32%,rgba(0,0,20,0.12) 36%,transparent 42%),radial-gradient(circle at 50% 50%,transparent 48%,rgba(0,0,15,0.08) 52%,transparent 58%)}
     .card-render.feat-stargate{filter:brightness(0.94) hue-rotate(20deg) saturate(1.30);box-shadow:0 0 28px rgba(var(--card-accent-rgb),0.28),inset 0 0 18px rgba(0,0,30,0.42)}
     .card-render.feat-halftone .art-fx-a{background:radial-gradient(circle,rgba(var(--card-accent-rgb),0.16) 1.5px,transparent 1.5px);background-size:12px 12px;opacity:0.48}
-    @keyframes scan-sweep{from{background-position:0 -56px}to{background-position:0 420px}}
+    @keyframes scan-sweep{from{background-position:0 -56px}to{background-position:0 350px}}
     .card-render.feat-scan-line .art-fx-b{background:linear-gradient(to bottom,transparent 0%,rgba(var(--card-accent-rgb),0.13) 50%,transparent 100%);background-size:100% 56px;animation:scan-sweep 3s linear infinite}
     .card-render.feat-diagonal-rule .art-fx-c{background:repeating-linear-gradient(135deg,transparent 0,transparent 14px,rgba(var(--card-accent-rgb),0.09) 14px,rgba(var(--card-accent-rgb),0.09) 15px,transparent 15px,transparent 28px)}
     .card-render.feat-ink-wash .art-fx-d{background:linear-gradient(to right,rgba(var(--card-accent-rgb),0.11) 0%,transparent 12%),linear-gradient(to left,rgba(var(--card-accent-rgb),0.09) 0%,transparent 10%),linear-gradient(to bottom,rgba(var(--card-accent-rgb),0.11) 0%,transparent 10%),linear-gradient(to top,rgba(var(--card-accent-rgb),0.09) 0%,transparent 8%)}
@@ -845,13 +845,20 @@
                                   &artwork=      (card_image_front URL)
 
        SCALE:
-         URL param ?scale=0.5 (default). Body = 300*scale × 420*scale px.
-           0.40→120×168  0.50→150×210  0.53→159×223  0.60→180×252
+         URL param ?scale=1.0 (default). Body = 250*scale × 350*scale px.
+           0.50→125×175  0.60→150×210  0.80→200×280  1.00→250×350
     ════════════════════════════════════════════════════════════ */
     (function () {
       'use strict';
 
-      var RARITY_COUNT = { Studied: 1, Catalogued: 2, Observed: 3, Mythic: 4 };
+      var RARITY_COUNT = { studied: 1, catalogued: 2, observed: 3, mythic: 4,
+                           Studied: 1, Catalogued: 2, Observed: 3, Mythic: 4,
+                           STUDIED: 1, CATALOGUED: 2, OBSERVED: 3, MYTHIC: 4 };
+      function getRarityCount(r) {
+        if (!r) return 1;
+        var k = r.trim();
+        return RARITY_COUNT[k] || RARITY_COUNT[k.toLowerCase()] || 1;
+      }
 
       var STAT_ICONS = {
         fantasy: { power: '⚔',  defense: '🛡'  },
@@ -1151,10 +1158,10 @@
 
         /* 2. Scale */
         var scale = parseFloat(params.get('scale'));
-        if (isNaN(scale) || scale <= 0 || scale > 3) scale = 0.5;
+        if (isNaN(scale) || scale <= 0 || scale > 3) scale = 1.0;
         document.documentElement.style.setProperty('--preview-scale', scale);
-        document.body.style.width  = (300 * scale) + 'px';
-        document.body.style.height = (420 * scale) + 'px';
+        document.body.style.width  = (250 * scale) + 'px';
+        document.body.style.height = (350 * scale) + 'px';
 
         /* 3. Template */
         var tpl = (data.template || '').toLowerCase().trim();
@@ -1212,12 +1219,12 @@
         var rarityAltActive = artStateForTpl && artStateForTpl['rarity-alt'];
         if (rarityAltActive) {
           var altSymbols = RARITY_ALT_SYMBOLS[tpl] || ['✦','✦✦','✦✦✦','✦✦✦✦'];
-          var ridx = (RARITY_COUNT[data.rarity] || 1) - 1;
+          var ridx = getRarityCount(data.rarity) - 1;
           rarityEl.classList.add('rarity-alt-mode');
           rarityEl.textContent = altSymbols[ridx] || altSymbols[0];
         } else {
           rarityEl.classList.remove('rarity-alt-mode');
-          var count = RARITY_COUNT[data.rarity] || 1;
+          var count = getRarityCount(data.rarity);
           for (var i = 0; i < 4; i++) {
             var dot = document.createElement('div');
             dot.className = 'rarity-dot' + (i < count ? '' : ' empty');
