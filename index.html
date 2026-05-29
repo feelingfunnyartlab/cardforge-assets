@@ -1178,7 +1178,8 @@
         var stateStr = (data.card_state || '').trim();
         if (stateStr) {
           try {
-            var decoded = JSON.parse(decodeURIComponent(escape(atob(stateStr))));
+            var _sb = stateStr.replace(/-/g,'+').replace(/_/g,'/'); while(_sb.length%4)_sb+='=';
+            var decoded = JSON.parse(decodeURIComponent(escape(atob(_sb))));
             if (decoded.artState && decoded.artState[tpl]) artStateForTpl = decoded.artState[tpl];
             if (decoded.fontScales) fontScales = decoded.fontScales;
             if (decoded.fullArt)    fullArt    = true;
